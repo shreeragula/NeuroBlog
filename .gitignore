@@ -1,1 +1,19 @@
 193k.csv
+# Ignore dataset files
+*.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+node_modules/
+dist/
+build/
+
+# Environment / secrets
+.env
+
+# Logs
+*.log
