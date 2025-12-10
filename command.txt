@@ -1,0 +1,7 @@
+uvicorn app:app --reload --host 0.0.0.0 --port 8000
+
+cd C:\Users\rupas\OneDrive\Documents\MINI_PROJECT\neuroblog
+
+ npm install
+
+ npm run dev
