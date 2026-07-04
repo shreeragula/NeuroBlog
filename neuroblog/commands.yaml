@@ -1,0 +1,23 @@
+backebd:
+
+.\venv\Scripts\Activate.ps1
+
+requirments:
+
+pip install sqlalchemy fastapi uvicorn pydantic requests
+pip install passlib[bcrypt]
+pip install python-jose[cryptography]
+pip install python-multipart
+pip install psycopg2-binary
+
+command:uvicorn app:app --reload
+____________________________________________________________________________________________
+
+cd ai_services
+
+.\venv\Scripts\Activate.ps1
+
+uvicorn main:app --reload --port 9000
+__________________________________________________________________________________________________
+cd neuroblog
+npm run dev
