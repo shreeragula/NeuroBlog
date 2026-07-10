@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 import "./BlogDetails.css";
+
+const EMOJIS = ["😊", "😂", "❤️", "😍", "👍", "🙌", "🔥", "👏", "🎉", "😮", "😢", "✨"];
 
 export default function BlogDetails() {
   const { id } = useParams();
@@ -23,12 +26,27 @@ export default function BlogDetails() {
   /* ✅ EDIT MODE STATE */
   const [editingId, setEditingId] = useState(null);
 
-  /* ✅ CURRENT USER STATE */
+  /* ✅ CURRENT USER STATE & PIC */
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentUserPic, setCurrentUserPic] = useState("");
 
   useEffect(() => {
     const username = localStorage.getItem("username");
     setCurrentUser(username);
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch("http://localhost:8000/me", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.profile_picture) {
+          setCurrentUserPic(data.profile_picture);
+        }
+      })
+      .catch(err => console.error("Error loading user profile picture:", err));
   }, []);
 
   // ================= FETCH BLOG =================
@@ -135,6 +153,10 @@ export default function BlogDetails() {
     fetchCommentCount(); // ✅ update count after adding
   };
 
+  const handleAddEmoji = (emoji) => {
+    setNewComment(prev => prev + emoji);
+  };
+
   // ================= DELETE COMMENT =================
   const handleDelete = async (commentId) => {
     const token = localStorage.getItem("token");
@@ -172,22 +194,27 @@ export default function BlogDetails() {
 
   // ================= NAVIGATION =================
   const currentIndex = allIds.indexOf(parseInt(id));
-  const hasNext = currentIndex < allIds.length - 1;
-  const hasPrevious = currentIndex > 0;
+  const isFirstBlog = currentIndex === 0; // oldest blog
+  const isLastBlog = currentIndex === allIds.length - 1; // newest blog
 
   const goLeft = () => {
-    if (hasNext) navigate(`/blog/${allIds[currentIndex + 1]}`);
-    else navigate("/home");
+    // Left arrow goes to new blog: currentIndex + 1
+    if (!isLastBlog) {
+      navigate(`/blog/${allIds[currentIndex + 1]}`);
+    }
   };
 
   const goRight = () => {
-    if (hasPrevious) navigate(`/blog/${allIds[currentIndex - 1]}`);
+    // Right arrow goes to old blog: currentIndex - 1
+    if (!isFirstBlog) {
+      navigate(`/blog/${allIds[currentIndex - 1]}`);
+    }
   };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "ArrowLeft") goLeft();
-      if (e.key === "ArrowRight" && hasPrevious) goRight();
+      if (e.key === "ArrowRight") goRight();
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -197,26 +224,34 @@ export default function BlogDetails() {
   if (!blog) return <div>Loading...</div>;
 
   return (
-    <div className="blog-details-container">
+    <div style={{ background: "linear-gradient(to bottom, #2c3e50, #34495e)", minHeight: "100vh" }}>
+      <Navbar />
+      <div className="blog-details-container" style={{ minHeight: "calc(100vh - 70px)", padding: "20px" }}>
+        <button 
+          className={`arrow left-arrow ${isLastBlog ? "disabled" : ""}`} 
+          onClick={goLeft}
+          disabled={isLastBlog}
+        >
+          ←
+        </button>
 
-      <button className="home-button" onClick={() => navigate("/home")}>
-        🏠
-      </button>
+        <button
+          className={`arrow right-arrow ${isFirstBlog ? "disabled" : ""}`}
+          onClick={goRight}
+          disabled={isFirstBlog}
+        >
+          →
+        </button>
 
-      <button className="arrow left-arrow" onClick={goLeft}>
-        ←
-      </button>
-
-      <button
-        className={`arrow right-arrow ${!hasPrevious ? "disabled" : ""}`}
-        onClick={goRight}
-        disabled={!hasPrevious}
-      >
-        →
-      </button>
-
-      <div className="blog-details-card">
-        <h1>{blog.title}</h1>
+        <div className="blog-details-card" style={{ position: "relative" }}>
+          <button 
+            className="blog-details-close-btn" 
+            onClick={() => navigate("/feed")}
+            title="Exit blog details"
+          >
+            ✖
+          </button>
+          <h1>{blog.title}</h1>
 
         <div className="blog-meta">
           {blog.username} • {new Date(blog.timestamp).toLocaleDateString()}
@@ -237,93 +272,146 @@ export default function BlogDetails() {
           </button>
         </div>
 
-        {/* COMMENTS */}
-        <hr />
+        {/* COMMENTS CONTAINER */}
+        <div className="comments-section-container">
+          <h3 className="comments-section-title">
+            💬 Comments ({commentCount})
+          </h3>
 
-        {/* ✅ UPDATED HEADER */}
-        <h3 style={{ marginTop: "20px" }}>
-          Comments ({commentCount})
-        </h3>
-
-        {/* ADD COMMENT */}
-        <div style={{ marginTop: "10px" }}>
-          <input
-            type="text"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Write a comment..."
-            style={{ width: "70%", padding: "8px" }}
-          />
-          <button
-            onClick={handleAddComment}
-            style={{ marginLeft: "10px", padding: "8px 12px" }}
-          >
-            Post
-          </button>
-        </div>
-
-        {/* COMMENT LIST */}
-        <div style={{ marginTop: "20px" }}>
-          {comments.map((comment) => (
-            <div key={comment.id} style={{ marginBottom: "15px" }}>
-              <strong>{comment.username}</strong>
-
-              {comment.username === currentUser && (
-                <button
-                  onClick={() => handleDelete(comment.id)}
-                  style={{
-                    marginLeft: "10px",
-                    fontSize: "12px",
-                    color: "red",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer"
+          {/* ADD COMMENT ROW */}
+          <div className="add-comment-wrapper">
+            <img
+              src={currentUserPic || "https://via.placeholder.com/40"}
+              alt="Current user avatar"
+              className="user-comment-avatar"
+            />
+            <div className="add-comment-fields">
+              <div className="add-comment-input-row">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleAddComment();
+                    }
                   }}
+                  placeholder="Add a public comment..."
+                  className="add-comment-input"
+                />
+                <button
+                  onClick={handleAddComment}
+                  className="add-comment-post-btn"
                 >
-                  Delete
+                  Comment
                 </button>
-              )}
+              </div>
 
-              {editingId === comment.id ? (
-                <>
-                  <input
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    style={{ marginTop: "5px", padding: "5px" }}
-                  />
-                  <button
-                    onClick={() => handleUpdate(comment.id)}
-                    style={{ marginLeft: "5px" }}
+              {/* EMOJI BAR */}
+              <div className="emoji-picker-row">
+                {EMOJIS.map((emoji) => (
+                  <span
+                    key={emoji}
+                    className="emoji-item"
+                    onClick={() => handleAddEmoji(emoji)}
                   >
-                    Save
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p style={{ margin: "5px 0" }}>{comment.content}</p>
-
-                  {comment.username === currentUser && (
-                    <button
-                      onClick={() => {
-                        setEditingId(comment.id);
-                        setNewComment(comment.content);
-                      }}
-                      style={{
-                        fontSize: "12px",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer"
-                      }}
-                    >
-                      Edit
-                    </button>
-                  )}
-                </>
-              )}
+                    {emoji}
+                  </span>
+                ))}
+              </div>
             </div>
-          ))}
+          </div>
+
+          {/* COMMENTS LIST */}
+          <div className="comments-list">
+            {comments.map((comment) => (
+              <div key={comment.id} className="comment-item">
+                <img
+                  src={comment.profile_picture || "https://via.placeholder.com/40"}
+                  alt={`${comment.username}'s avatar`}
+                  className="commenter-avatar"
+                />
+                <div className="comment-body">
+                  <div className="comment-header">
+                    <span className="comment-author">{comment.username}</span>
+                    <span className="comment-time">
+                      {comment.created_at
+                        ? new Date(comment.created_at).toLocaleDateString()
+                        : "Just now"}
+                    </span>
+                  </div>
+
+                  {editingId === comment.id ? (
+                    <div className="edit-comment-wrapper">
+                      <input
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleUpdate(comment.id);
+                          }
+                        }}
+                        className="edit-comment-input"
+                      />
+                      <div className="edit-comment-actions">
+                        <button
+                          onClick={() => handleUpdate(comment.id)}
+                          className="save-edit-btn"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingId(null);
+                            setNewComment("");
+                          }}
+                          className="cancel-edit-btn"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="comment-text">{comment.content}</p>
+                      
+                      <div className="comment-actions">
+                        {comment.username === currentUser && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingId(comment.id);
+                                setNewComment(comment.content);
+                              }}
+                              className="comment-action-btn edit"
+                            >
+                              Edit
+                            </button>
+                            <span className="bullet-sep">•</span>
+                            <button
+                              onClick={() => handleDelete(comment.id)}
+                              className="comment-action-btn delete"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {comments.length === 0 && (
+              <p className="no-comments-msg">No comments yet. Start the conversation!</p>
+            )}
+          </div>
         </div>
 
+      </div>
       </div>
     </div>
   );

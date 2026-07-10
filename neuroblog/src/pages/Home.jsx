@@ -1,36 +1,87 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Zai from "../components/Zai";
 import "./Home.css";
 
 export default function Home() {
   const navigate = useNavigate();
 
-  const [openMenu, setOpenMenu] = useState(null);
-  const menuRef = useRef(null);
-
   /* ================= SEARCH STATE ================= */
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [blogs, setBlogs] = useState([]);
+  const [allBlogs, setAllBlogs] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [noMatches, setNoMatches] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  /* ================= 🔔 NOTIFICATION STATE ================= */
-  const [notifications, setNotifications] = useState([]);
+  /* ================= FETCH ALL BLOGS ON MOUNT ================= */
+  useEffect(() => {
+    setLoading(true);
+    fetch("http://127.0.0.1:8000/posts")
+      .then(res => res.json())
+      .then(data => {
+        setAllBlogs(data);
+        setBlogs(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
   /* ================= DEBOUNCE LOGIC ================= */
   useEffect(() => {
+    if (searchTerm !== debouncedSearch) {
+      setIsSearching(true);
+    }
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, debouncedSearch]);
 
-  /* ================= FETCH BLOGS ================= */
+  /* ================= SEARCH FILTER & SORT LOGIC ================= */
   useEffect(() => {
+    if (!debouncedSearch) {
+      setBlogs(allBlogs.map(b => ({ ...b, highlight: null })));
+      setNoMatches(false);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
     fetch(`http://127.0.0.1:8000/posts?search=${debouncedSearch}`)
       .then(res => res.json())
-      .then(data => setBlogs(data))
-      .catch(err => console.error(err));
-  }, [debouncedSearch]);
+      .then(searchResults => {
+        if (searchResults.length > 0) {
+          setNoMatches(false);
+          const matchedIds = new Set(searchResults.map(r => r.id));
+          
+          const matchingList = searchResults.map(s => {
+            const original = allBlogs.find(b => b.id === s.id) || s;
+            return { ...original, highlight: s.highlight };
+          });
+
+          const nonMatchingList = allBlogs
+            .filter(b => !matchedIds.has(b.id))
+            .map(b => ({ ...b, highlight: null }));
+
+          setBlogs([...matchingList, ...nonMatchingList]);
+        } else {
+          // No matches: Keep all current blogs on screen and toggle warning notice
+          setNoMatches(true);
+          setBlogs(allBlogs.map(b => ({ ...b, highlight: null })));
+        }
+        setIsSearching(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setIsSearching(false);
+      });
+  }, [debouncedSearch, allBlogs]);
 
   /* ================= 🔔 FETCH NOTIFICATIONS ================= */
   const fetchNotifications = () => {
@@ -44,207 +95,109 @@ export default function Home() {
     fetchNotifications();
   }, []);
 
-  /* 🔥 AUTO REFRESH EVERY 10 SECONDS */
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  /* ================= 3D CARD TILT PARALLAX EFFECT ================= */
+  const handleMouseMove = (e) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((centerY - y) / centerY) * 8;
+    const rotateY = ((x - centerX) / centerX) * 8;
+    
+    card.style.setProperty("--rotate-x", `${rotateX}deg`);
+    card.style.setProperty("--rotate-y", `${rotateY}deg`);
+  };
 
-  /* ================= CLOSE ON OUTSIDE CLICK ================= */
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpenMenu(null);
-      }
-    };
-
-    window.addEventListener("mousedown", handleClickOutside);
-    return () => window.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  /* ================= TIME AGO FUNCTION ================= */
-  const timeAgo = (timestamp) => {
-    const diff = Math.floor((new Date() - new Date(timestamp)) / 60000);
-    if (diff < 1) return "Just now";
-    if (diff < 60) return `${diff} min ago`;
-    return `${Math.floor(diff / 60)} hr ago`;
+  const handleMouseLeave = (e) => {
+    const card = e.currentTarget;
+    card.style.setProperty("--rotate-x", "0deg");
+    card.style.setProperty("--rotate-y", "0deg");
   };
 
   /* ================= JSX ================= */
   return (
     <div className="home-bg">
-      <header>
-        <div className="logo">Neuroblog</div>
-
-        {/* ================= SEARCH BAR ================= */}
-        <div className="search-container">
-          <input
-            type="text"
-            placeholder="Search blogs..."
-            className="search-bar"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        {/* ================= ICONS ================= */}
-        <div className="icons" ref={menuRef}>
-          <button className="create-btn" onClick={() => navigate("/create")}>
-            Create
-          </button>
-
-          {/* 🔔 NOTIFICATIONS */}
-          <div className="notification-wrapper">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpenMenu(
-                  openMenu === "notifications" ? null : "notifications"
-                );
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-
-            {/* 🔴 Notification Count */}
-            {notifications.length > 0 && (
-              <span className="notification-badge">
-                {notifications.length}
-              </span>
-            )}
-
-            {openMenu === "notifications" && (
-              <div className="notification-dropdown">
-                <h4><b><center>Recent Posts</center></b></h4>
-
-                {notifications.map((post) => (
-                  <div
-                    key={post.id}
-                    className="notification-item unread"
-                    onClick={() => navigate(`/blog/${post.id}`)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    
-                    <div>
-                      <p>
-                        <strong>{post.title}</strong>
-                      </p>
-                      <small>
-                        by {post.username} • {timeAgo(post.timestamp)}
-                      </small>
-                      <span>📝</span>
-                    </div>
-                  </div>
-                  
-                ))}
-
-                {notifications.length === 0 && (
-                  <p style={{ textAlign: "center" }}>
-                    No recent posts
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* 👤 PROFILE */}
-          <div className="profile" onClick={(e) => e.stopPropagation()}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpenMenu(openMenu === "profile" ? null : "profile");
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              <circle cx="12" cy="7" r="4" />
-              <path d="M5.5 21a8.38 8.38 0 0113 0" />
-            </svg>
-
-            {openMenu === "profile" && (
-              <div className="dropdown">
-                <button onClick={() => navigate("/profile")}>My Profile</button>
-                <button onClick={() => navigate("/view")}>My Blogs</button>
-                <button onClick={() => navigate("/settings")}>Settings</button>
-                <button onClick={() => navigate("/")}>Logout</button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar showSearch={true} searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
       {/* ================= MAIN CONTENT ================= */}
       <div className="main-content">
-        <h1>Welcome to MyBlog Platform</h1>
-        <p>View, create, and explore amazing blogs with ease.</p>
+        <h1>Welcome to NeuroBlog</h1>
+        <p>Discover ideas, craft stories, and inspire the world—one blog at a time.</p>
 
         <div className="content-wrapper">
           <div className="popular-blogs">
-            <h2>🔥 Blogs</h2>
+            <div className="blogs-header-wrapper">
+              <div className="zai-mask-container">
+                <Zai />
+              </div>
+              <h2>🔥 Blogs</h2>
+            </div>
 
-            {blogs.map((blog) => {
-              const imgMatch = blog.content.match(/<img[^>]+src="([^">]+)"/);
-              const firstImage = imgMatch ? imgMatch[1] : null;
-              const textOnly = blog.content.replace(/<img[^>]*>/g, "");
+            {noMatches && (
+              <p className="search-no-matches-text">
+                No matching blogs found.
+              </p>
+            )}
 
-              return (
-                <div
-                  key={blog.id}
-                  className="home-blog-card"
-                  onClick={() => navigate(`/blog/${blog.id}`)}
-                  style={{ cursor: "pointer" }}
-                >
-                  {firstImage && (
-                    <div className="home-thumbnail">
-                      <img src={firstImage} alt="thumbnail" />
-                    </div>
-                  )}
-
-                  <div className="home-blog-content">
-                    <h3>{blog.title}</h3>
-
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: textOnly.slice(0, 120) + "..."
-                      }}
-                    />
-
-                    <small>
-                      {blog.username} •{" "}
-                      {new Date(blog.timestamp).toLocaleDateString()}
-                    </small>
-                  </div>
-                </div>
-              );
-            })}
-
-            {blogs.length === 0 && (
+            {loading ? (
+              <p className="search-loading-text">
+                Loading blogs...
+              </p>
+            ) : isSearching ? (
+              <p className="search-loading-text">
+                🔍 Searching...
+              </p>
+            ) : blogs.length === 0 ? (
               <p style={{ textAlign: "center", marginTop: "20px" }}>
                 No blogs found.
               </p>
+            ) : (
+              blogs.map((blog, index) => {
+                const imgMatch = blog.content.match(/<img[^>]+src="([^">]+)"/);
+                const firstImage = imgMatch ? imgMatch[1] : null;
+                const textOnly = blog.content.replace(/<img[^>]*>/g, "");
+
+                return (
+                  <div
+                    key={blog.id}
+                    className="home-blog-card"
+                    onClick={() => navigate(`/blog/${blog.id}`)}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                    style={{ 
+                      cursor: "pointer",
+                      animationDelay: `${index * 50}ms`,
+                      opacity: debouncedSearch && !blog.highlight ? 0.45 : 1,
+                      transition: "opacity 0.4s ease"
+                    }}
+                  >
+                    {firstImage && (
+                      <div className="home-thumbnail">
+                        <img src={firstImage} alt="thumbnail" style={{ filter: debouncedSearch && !blog.highlight ? "grayscale(40%)" : "none" }} />
+                      </div>
+                    )}
+
+                    <div className="home-blog-content">
+                      <h3>{blog.title}</h3>
+
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: blog.highlight || (textOnly.slice(0, 120) + "...")
+                        }}
+                      />
+
+                      <small>
+                        {blog.username} •{" "}
+                        {new Date(blog.timestamp).toLocaleDateString()}
+                      </small>
+                    </div>
+                  </div>
+                );
+              })
             )}
-          </div>
-
-          <div className="side-features">
-            <div className="feature-card">
-              <h2>About Our Website</h2>
-              <p>
-                MyBlog is a modern blogging platform where creativity meets innovation — share ideas, explore topics, and connect with readers worldwide.
-🚀 Our integrated AI Blog Generator helps you create engaging blogs instantly and effortlessly.
-              </p>
-            </div>
-
-            <div className="feature-card">
-              <h2>Start Writing Today</h2>
-              <p>
-                Share your thoughts, showcase your knowledge, and inspire others.
-
-              </p>
-            </div>
           </div>
         </div>
       </div>

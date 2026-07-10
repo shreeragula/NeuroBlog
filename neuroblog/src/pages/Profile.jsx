@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import Navbar from "../components/Navbar";
 import "./Profile.css";
 
 export default function Profile() {
@@ -135,6 +136,7 @@ export default function Profile() {
 
   return (
     <div className="profile-bg">
+      <Navbar />
       <div className="profile-container">
 
         {/* HEADER */}

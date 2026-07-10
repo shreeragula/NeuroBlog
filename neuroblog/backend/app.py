@@ -2,10 +2,10 @@ from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, desc
+from sqlalchemy import or_, desc, text
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 
 from database import engine, Base, get_db
@@ -121,29 +121,44 @@ def read_posts(
     search: str = Query(None),
     db: Session = Depends(get_db)
 ):
-    query = db.query(Post).options(joinedload(Post.user))
-
     if search:
-        query = query.filter(
-            or_(
-                Post.title.ilike(f"%{search}%"),
-                Post.content.ilike(f"%{search}%")
-            )
-        )
-
-    posts = query.order_by(desc(Post.timestamp)).all()
-
-    return [
-        {
-            "id": post.id,
-            "title": post.title,
-            "content": post.content,
-            "timestamp": post.timestamp,
-            "user_id": post.user_id,
-            "username": post.user.username
-        }
-        for post in posts
-    ]
+        sql = text("""
+            SELECT posts.id, posts.title, posts.content, posts.timestamp, posts.user_id, users.username,
+                   ts_rank(to_tsvector('english', posts.title || ' ' || posts.content), websearch_to_tsquery('english', :search)) as rank,
+                   ts_headline('english', posts.content, websearch_to_tsquery('english', :search), 'StartSel=<mark>, StopSel=</mark>, MaxWords=20, MinWords=10, HighlightAll=FALSE') as highlight
+            FROM posts
+            JOIN users ON posts.user_id = users.id
+            WHERE to_tsvector('english', posts.title || ' ' || posts.content) @@ websearch_to_tsquery('english', :search)
+            ORDER BY rank DESC, posts.timestamp DESC
+        """)
+        result = db.execute(sql, {"search": search}).fetchall()
+        return [
+            {
+                "id": r.id,
+                "title": r.title,
+                "content": r.content,
+                "timestamp": r.timestamp,
+                "user_id": r.user_id,
+                "username": r.username,
+                "highlight": r.highlight
+            }
+            for r in result
+        ]
+    else:
+        query = db.query(Post).options(joinedload(Post.user))
+        posts = query.order_by(desc(Post.timestamp)).all()
+        return [
+            {
+                "id": post.id,
+                "title": post.title,
+                "content": post.content,
+                "timestamp": post.timestamp,
+                "user_id": post.user_id,
+                "username": post.user.username,
+                "highlight": None
+            }
+            for post in posts
+        ]
 
 
 @app.get("/posts/recent")
@@ -181,7 +196,11 @@ def get_my_posts(
 ):
     posts = (
         db.query(Post)
-        .options(joinedload(Post.user))
+        .options(
+            joinedload(Post.user),
+            joinedload(Post.likes),
+            joinedload(Post.comments)
+        )
         .filter(Post.user_id == current_user.id)
         .order_by(desc(Post.timestamp))
         .all()
@@ -194,7 +213,10 @@ def get_my_posts(
             "content": post.content,
             "timestamp": post.timestamp,
             "user_id": post.user_id,
-            "username": post.user.username
+            "username": post.user.username,
+            "likes_count": sum(1 for r in post.likes if r.is_like),
+            "dislikes_count": sum(1 for r in post.likes if not r.is_like),
+            "comments_count": sum(1 for c in post.comments if c.parent_id is None)
         }
         for post in posts
     ]
@@ -303,6 +325,7 @@ def delete_post(
 def add_comment(
     post_id: int,
     content: str,
+    parent_id: Optional[int] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -313,7 +336,8 @@ def add_comment(
     new_comment = Comment(
         content=content,
         user_id=current_user.id,
-        post_id=post_id
+        post_id=post_id,
+        parent_id=parent_id
     )
 
     db.add(new_comment)
@@ -323,7 +347,9 @@ def add_comment(
     return {
         "id": new_comment.id,
         "content": new_comment.content,
+        "parent_id": new_comment.parent_id,
         "username": current_user.username,
+        "profile_picture": current_user.profile_picture,
         "created_at": new_comment.created_at
     }
 
@@ -343,7 +369,9 @@ def get_comments(post_id: int, db: Session = Depends(get_db)):
         {
             "id": c.id,
             "content": c.content,
+            "parent_id": c.parent_id,
             "username": c.user.username,
+            "profile_picture": c.user.profile_picture,
             "created_at": c.created_at
         }
         for c in comments
@@ -443,18 +471,22 @@ def get_reactions(post_id: int, db: Session = Depends(get_db)):
 
 @app.get("/notifications/recent-posts")
 def get_recent_posts(db: Session = Depends(get_db)):
-
+    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
     posts = (
         db.query(Post)
-        .order_by(Post.id.desc())  # ✅ ORDER BY ID
-        .limit(3)
+        .options(joinedload(Post.user))
+        .filter(Post.timestamp >= one_hour_ago)
+        .order_by(Post.id.desc())
+        .limit(5)
         .all()
     )
 
     return [
         {
             "id": post.id,
-            "title": post.title
+            "title": post.title,
+            "username": post.user.username,
+            "timestamp": (post.timestamp.isoformat() + "Z") if post.timestamp else None
         }
         for post in posts
     ]

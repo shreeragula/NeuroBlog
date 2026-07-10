@@ -103,6 +103,7 @@ class Comment(Base):
 
     user_id = Column(Integer, ForeignKey("users.id"))
     post_id = Column(Integer, ForeignKey("posts.id"))
+    parent_id = Column(Integer, ForeignKey("comments.id", ondelete="CASCADE"), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 

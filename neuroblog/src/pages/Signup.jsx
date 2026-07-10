@@ -83,6 +83,12 @@ export default function Signup() {
 
   return (
     <div className="signup-bg">
+      <header className="main-header">
+        <div className="logo" onClick={() => navigate("/")}>
+          Neuroblog
+        </div>
+      </header>
+
       <div className="container">
 
         {/* Left section */}

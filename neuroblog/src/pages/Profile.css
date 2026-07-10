@@ -1,6 +1,5 @@
 .profile-bg {
   min-height: 100vh;
-  padding: 2rem 0;
   background: linear-gradient(135deg, #355c7d, #6c5b7b, #c06c84);
   background-size: 400% 400%;
   animation: gradientBG 12s ease infinite;

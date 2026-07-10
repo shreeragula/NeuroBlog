@@ -1,0 +1,243 @@
+/* Zai Mask Container: aligned exactly with the horizontal divider line (50% bottom) */
+.zai-mask-container {
+  position: absolute;
+  bottom: 50%; /* Ends exactly at the horizontal centerline */
+  left: -130px; /* Offset left to accommodate wide speech bubbles */
+  width: 480px; /* Expand width to prevent cutting off long greeting messages */
+  height: 160px; /* Height constraint spans above the divider line, leaving space for Zzz */
+  overflow: hidden; /* Peek-a-boo masking effect */
+  z-index: 6; /* Draw Zai head/paw above the divider line segment */
+  pointer-events: none; /* Let clicks pass through the empty parts of container */
+}
+
+/* Zai Companion Base Layout inside Mask */
+.zai-outer-container {
+  position: absolute;
+  bottom: -60px; /* Sleeping state: tucked low, only top of hood visible */
+  right: 15px; /* Sit Zai on the right side of the mask so bubble has space on the left */
+  width: 130px;
+  height: 130px;
+  pointer-events: auto; /* Re-enable pointer events on the character */
+  transition: bottom 0.6s cubic-bezier(0.25, 0.8, 0.25, 1.12); /* Smooth sliding up transition */
+}
+
+/* Waking / Awake state: Slide up to reveal full head, blinking eyes, visor, and waving arm */
+.zai-outer-container.zai-state-waking,
+.zai-outer-container.zai-state-awake {
+  bottom: -15px; /* Fully visible above divider line level */
+}
+
+.zai-body-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* ================= 💤 SLEEP BREATHING ANIMATION ================= */
+@keyframes zaiBreathe {
+  0%, 100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(2px) scaleY(0.98);
+  }
+}
+
+.zai-breathing {
+  animation: zaiBreathe 3s ease-in-out infinite;
+}
+
+/* ================= 👤 HEAD TRANSITIONS ================= */
+.zai-head-group {
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1.15);
+}
+
+/* Sleeping: Head tilted down and to the left (resting on horizontal paw) */
+.zai-head-sleeping {
+  transform: rotate(-10deg) translate(-8px, 12px);
+}
+
+/* Waking: Straightening up */
+.zai-head-waking {
+  transform: rotate(-2deg) translate(-1px, 2px);
+}
+
+/* Awake: Fully upright */
+.zai-head-awake {
+  transform: rotate(0deg) translate(0px, 0px);
+}
+
+/* ================= 💪 ARM / WAVING TRANSITIONS ================= */
+.zai-arm-group {
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1.15);
+}
+
+/* Sleeping: Arm resting flat on the divider line (panda style) */
+.zai-arm-sleeping {
+  transform: translate(8px, 46px) rotate(58deg);
+}
+
+/* Waving state: Arm waves outward on the left side of the body */
+.zai-arm-waving {
+  animation: zaiWave 0.5s ease-in-out infinite alternate;
+}
+
+/* Awake / Idle (if cursor sits nearby without wave active) */
+.zai-arm-awake {
+  transform: rotate(-10deg);
+}
+
+@keyframes zaiWave {
+  0% {
+    transform: rotate(-10deg);
+  }
+  100% {
+    transform: rotate(-35deg);
+  }
+}
+
+/* ================= 💪 RIGHT ARM TRANSITIONS ================= */
+.zai-arm-right {
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1.15);
+}
+
+.zai-arm-right-sleeping {
+  transform: rotate(0deg);
+}
+
+.zai-arm-right-waking {
+  transform: rotate(0deg);
+}
+
+.zai-arm-right-awake {
+  transform: rotate(0deg);
+}
+
+/* ================= 💬 SPEECH BUBBLE ================= */
+.zai-speech-bubble {
+  position: absolute;
+  bottom: 42px; /* Centered vertically with Zai's head */
+  right: 105%; /* Position to the left side of Zai */
+  transform: scale(0);
+  transform-origin: right center;
+  background: rgba(26, 27, 51, 0.95);
+  color: #ffffff;
+  border: 1.5px solid #ff758c;
+  border-radius: 12px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: bold;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Light mode bubble colors */
+[data-theme="light"] .zai-speech-bubble {
+  background: #ffffff;
+  color: #2b2d42;
+  border-color: #ff758c;
+  box-shadow: 0 4px 15px rgba(255, 117, 140, 0.15);
+}
+
+.zai-speech-bubble.visible {
+  transform: scale(1);
+}
+
+/* Arrow pointing right (towards Zai's head) */
+.zai-speech-bubble::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px 0 6px 6px;
+  border-style: solid;
+  border-color: transparent transparent transparent rgba(26, 27, 51, 0.95);
+  display: block;
+  width: 0;
+}
+
+[data-theme="light"] .zai-speech-bubble::after {
+  border-color: transparent transparent transparent #ffffff;
+}
+
+.zai-speech-bubble::before {
+  content: '';
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 8px 0 8px 8px;
+  border-style: solid;
+  border-color: transparent transparent transparent #ff758c;
+  display: block;
+  width: 0;
+  z-index: -1;
+}
+
+/* ================= 💤 FLOATING ZZZ ANIMATION ================= */
+@keyframes zaiZzz {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  30% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-18px, -55px) scale(1.3);
+  }
+}
+
+.zai-zzz {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  fill: #ff758c;
+  text-shadow: 0 0 4px rgba(255, 117, 140, 0.4);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.zai-zzz-1 {
+  font-size: 13px;
+  animation: zaiZzz 3.2s infinite 0s;
+}
+
+.zai-zzz-2 {
+  font-size: 19px;
+  animation: zaiZzz 3.2s infinite 0.6s;
+}
+
+.zai-zzz-3 {
+  font-size: 25px;
+  animation: zaiZzz 3.2s infinite 1.2s;
+}
+
+.zai-zzz-4 {
+  font-size: 32px;
+  animation: zaiZzz 3.2s infinite 1.8s;
+}
+
+.zai-zzz-5 {
+  font-size: 16px;
+  animation: zaiZzz 3.2s infinite 2.4s;
+}
+
+/* ================= 👀 BLINKING ANIMATION ================= */
+@keyframes zaiBlink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+.zai-eye-blink {
+  animation: zaiBlink 4s infinite;
+}

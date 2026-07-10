@@ -7,7 +7,6 @@ import Signup from "./pages/Signup";
 import Home from "./pages/Home";
 import CreateBlog from "./pages/CreateBlog";
 import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
 import ViewBlog from "./pages/ViewBlog";
 import BlogDetails from "./pages/BlogDetails";   // ✅ NEW IMPORT
 
@@ -18,11 +17,10 @@ export default function App() {
         <Route path="/" element={<Main />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/view" element={<ViewBlog />} />
+        <Route path="/feed" element={<Home />} />
+        <Route path="/my_blogs" element={<ViewBlog />} />
         <Route path="/create" element={<CreateBlog />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/settings" element={<Settings />} />
 
         {/* ✅ NEW DYNAMIC BLOG ROUTE */}
         <Route path="/blog/:id" element={<BlogDetails />} />

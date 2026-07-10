@@ -1,0 +1,70 @@
+.hero-background-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1; /* Layer background above root/body background colors */
+  overflow: hidden;
+  pointer-events: none; /* Allow user clicks to pass through to underlying UI */
+  background: #111224; /* Solid dark theme fallback */
+}
+
+.hero-background-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: translate3d(0, 0, 0); /* Force GPU acceleration */
+  will-change: transform;
+}
+
+/* Subtle dark overlay to keep text elements highly readable */
+.hero-background-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(17, 18, 36, 0.45) 0%, rgba(17, 18, 36, 0.7) 100%);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Floating light blobs for ambient color highlights */
+.hero-background-glow-1 {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(255, 117, 140, 0.12) 0%, transparent 70%);
+  filter: blur(80px);
+  animation: floatGlow1 25s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.hero-background-glow-2 {
+  position: absolute;
+  bottom: -10%;
+  right: -10%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(108, 91, 123, 0.18) 0%, transparent 70%);
+  filter: blur(100px);
+  animation: floatGlow2 30s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes floatGlow1 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(15%, 15%) scale(1.2);
+  }
+}
+
+@keyframes floatGlow2 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(-10%, -15%) scale(1.1);
+  }
+}

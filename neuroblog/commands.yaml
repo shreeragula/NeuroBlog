@@ -1,4 +1,4 @@
-backebd:
+backend:
 
 .\venv\Scripts\Activate.ps1
 
@@ -13,7 +13,7 @@ pip install psycopg2-binary
 command:uvicorn app:app --reload
 ____________________________________________________________________________________________
 
-cd ai_services
+cd ai_service
 
 .\venv\Scripts\Activate.ps1
 

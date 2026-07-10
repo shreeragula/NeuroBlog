@@ -1,7 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { Quill } from "react-quill-new";
+import ImageResize from "quill-image-resize-module-react";
 import App from "./App";
 import "./index.css";
+
+// Fix for quill-image-resize-module-react window.Quill undefined in Vite
+window.Quill = Quill;
+Quill.register("modules/imageResize", ImageResize, true);
 
 if (!localStorage.getItem("userEmail")) {
   const email = "thanu123@gmail.com"; // 🔴 TEMP: replace with real email later

@@ -3,7 +3,14 @@ import "./Login.css";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem("remember_me") === "true";
+  });
+  const [email, setEmail] = useState(() => {
+    const savedEmail = localStorage.getItem("remembered_email");
+    const isRemembered = localStorage.getItem("remember_me") === "true";
+    return isRemembered && savedEmail ? savedEmail : "";
+  });
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -49,7 +56,16 @@ export default function Login() {
       localStorage.setItem("userId", data.user_id || "");
       localStorage.setItem("userEmail", data.email || "");
 
-      navigate("/home");
+      // ✅ Process Remember Me
+      if (rememberMe) {
+        localStorage.setItem("remember_me", "true");
+        localStorage.setItem("remembered_email", email);
+      } else {
+        localStorage.setItem("remember_me", "false");
+        localStorage.removeItem("remembered_email");
+      }
+
+      navigate("/feed");
 
     } catch (err) {
       console.error(err);
@@ -61,6 +77,12 @@ export default function Login() {
 
   return (
     <div className="login-wrapper">
+      <header className="main-header">
+        <div className="logo" onClick={() => navigate("/")}>
+          Neuroblog
+        </div>
+      </header>
+
       <div className="login-container">
 
         {/* LEFT SIDE */}
@@ -99,8 +121,13 @@ export default function Login() {
             </div>
 
             <div className="login-options">
-              <label>
-                <input type="checkbox" /> Remember me
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", userSelect: "none" }}>
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />{" "}
+                Remember me
               </label>
             </div>
 
