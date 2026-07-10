@@ -1,12 +1,12 @@
 # NeuroBlog 🧠📝
 
-Welcome to **NeuroBlog**, a state-of-the-art, feature-rich blogging platform combining modern web aesthetics, interactive AI features, and powerful server search integrations. Designed for content creators and readers alike, NeuroBlog features smooth glassmorphism, responsive elements, and an interactive AI mascot.
+Welcome to **NeuroBlog**, a state-of-the-art, feature-rich blogging platform combining modern web aesthetics, interactive mascot animations, and powerful server search integrations. Designed for content creators and readers alike, NeuroBlog features smooth glassmorphism, responsive elements, and an interactive screen mascot.
 
 ---
 
 ## 🚀 Key Features
 
-### 1. Interactive AI Blog Companion — **Zai** 🐼
+### 1. Interactive Blog Screen Companion — **Zai** 🐼
 * **Wake/Sleep States**: Animated sleeping SVG companion that wakes up, blinks, and stretches when you hover your mouse close to it.
 * **Alternate Greetings**: Displays randomized greeting prompts in a speech bubble to interact with the user.
 * **Organic Animations**: Alternating waving hands, sleeping rest poses, and staggered floating Zzz particles.
