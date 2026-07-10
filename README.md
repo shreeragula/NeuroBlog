@@ -9,7 +9,7 @@ Welcome to **NeuroBlog**, a state-of-the-art, feature-rich blogging platform com
 ### 1. Interactive AI Blog Companion — **Zai** 🐼
 * **Wake/Sleep States**: Animated sleeping SVG companion that wakes up, blinks, and stretches when you hover your mouse close to it.
 * **Alternate Greetings**: Displays randomized greeting prompts in a speech bubble to interact with the user.
-* **Organic Animations**: Alternating waving hands, panda-style sleeping rest poses, and staggered floating Zzz particles.
+* **Organic Animations**: Alternating waving hands, sleeping rest poses, and staggered floating Zzz particles.
 
 ### 2. Rich Text Blogging Editor
 * **Quill Integration**: Powerful rich text editor with hover tooltips for toolbar buttons.
@@ -17,7 +17,7 @@ Welcome to **NeuroBlog**, a state-of-the-art, feature-rich blogging platform com
 * **Drag-and-Drop Images**: Reposition images instantly inside text content by dragging them to new paragraphs.
 * **Undo & Redo Shortcuts**: Integrated undo/redo buttons in the edit panel.
 
-### 3. YouTube-Style Comments & Replies
+### 3. Threaded Comments & Replies
 * **Collapsible Reply Threads**: Comment threads support nested visual reply structures with expandable toggle buttons.
 * **Emoji Quick Bar**: Tap emoji shortcuts to insert expressions instantly.
 * **Ownership Verification**: Edit and Delete options are constrained strictly to comment owners.
@@ -29,17 +29,18 @@ Welcome to **NeuroBlog**, a state-of-the-art, feature-rich blogging platform com
 
 ### 5. Premium Web Design
 * **Glassmorphic Panels**: Clean, translucent containers with soft highlights, borders, and translation hover offsets.
-* **Cyberpunk Parallax Tilts**: Blog cards tilt dynamically along the X and Y axes on mouse movement.
+* **Interactive Parallax Tilts**: Blog cards tilt dynamically along the X and Y axes on mouse movement.
 * **Dynamic Video Background**: Fluid video loop backdrop on the landing page.
 * **Dark/Light Mode Theme Toggle**: Instant transition between dark glassmorphism and colorful pastel gradients (pink, purple, and blue tones).
 * **Auto-Dismiss Notifications**: Displays recent posts from the last hour, automatically clearing badge counts upon viewing.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Languages
 
-* **Frontend**: React.js, React Router, Vite, Vanilla CSS.
-* **Backend**: FastAPI, Python, PostgreSQL, SQLAlchemy.
+* **Frontend Languages & Frameworks**: JavaScript (React.js), HTML5, CSS3, Vite
+* **Backend Languages & Frameworks**: Python (FastAPI), SQLAlchemy
+* **Database**: PostgreSQL
 
 ---
 
@@ -55,7 +56,7 @@ Welcome to **NeuroBlog**, a state-of-the-art, feature-rich blogging platform com
    pip install -r requirements.txt
    ```
 3. Run the database migrations.
-4. Launch the FastAPI server:
+4. Launch the server:
    ```bash
    uvicorn app:app --reload
    ```
@@ -69,7 +70,7 @@ Welcome to **NeuroBlog**, a state-of-the-art, feature-rich blogging platform com
    ```bash
    npm install
    ```
-3. Start the Vite development server:
+3. Start the development server:
    ```bash
    npm run dev
    ```
